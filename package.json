@@ -1,0 +1,23 @@
+{
+  "name": "bbmc-raknet",
+  "version": "1.0.0",
+  "description": "BlueBirdMC's RakNet library",
+  "main": "src/RakNet.js",
+  "dependencies": {
+    "bbmc-binarystream": "^1.0.0",
+    "js-inet": "^0.2.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlueBirdMC/RakNet.git"
+  },
+  "author": "MFDGaming",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/BlueBirdMC/RakNet/issues"
+  },
+  "homepage": "https://github.com/BlueBirdMC/RakNet#readme"
+}
