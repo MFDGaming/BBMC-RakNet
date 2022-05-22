@@ -94,9 +94,9 @@ class Packet extends BinaryStream {
 		let version = this.readUnsignedByte();
 		if (version === 4) {
 			let name = (~this.readUnsignedByte() & 0xff).toString();
-			name += "."
+			name += ".";
 			name += (~this.readUnsignedByte() & 0xff).toString();
-			name += "."
+			name += ".";
 			name += (~this.readUnsignedByte() & 0xff).toString();
 			name += ".";
 			name += (~this.readUnsignedByte() & 0xff).toString();
