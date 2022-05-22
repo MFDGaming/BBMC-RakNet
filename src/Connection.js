@@ -63,8 +63,8 @@ class Connection {
 		this.receiverSequenceNumber = 0;
 		this.senderReliableIndex = 0;
 		this.receiverReliableIndex = 0;
-		this.senderSequenceChannels = []
-		this.senderOrderChannels = []
+		this.senderSequenceChannels = [];
+		this.senderOrderChannels = [];
 		for (let i = 0; i < 32; ++i) {
 			this.senderSequenceChannels.push(0);
 			this.senderOrderChannels.push(0);
