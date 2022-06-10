@@ -129,8 +129,8 @@ class Packet extends BinaryStream {
 			this.writeUnsignedShortBE(value.port);
 		} else if (value.version == 6) {
 			this.writeUnsignedByte(value.version);
-			this.writeShortLE(10);
-			this.writeShortBE(value.port);
+			this.writeUnsignedShortLE(10);
+			this.writeUnsignedShortBE(value.port);
 			this.writeIntBE(0);
 			this.write(pton(value.name));
 			this.writeIntBE(0);
