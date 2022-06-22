@@ -36,8 +36,8 @@ class Connection {
 	nackQueue;
 	senderSequenceNumber;
 	receiverSequenceNumber;
-	senderReliableIndex;
-	receiverReliableIndex;
+	senderReliableFrameIndex;
+	receiverReliableFrameIndex;
 	senderSequenceChannels;
 	senderOrderChannels;
 	senderCompoundID;
@@ -61,8 +61,8 @@ class Connection {
 		this.nackQueue = [];
 		this.senderSequenceNumber = 0;
 		this.receiverSequenceNumber = 0;
-		this.senderReliableIndex = 0;
-		this.receiverReliableIndex = 0;
+		this.senderReliableFrameIndex = 0;
+		this.receiverReliableFrameIndex = 0;
 		this.senderSequenceChannels = [];
 		this.senderOrderChannels = [];
 		for (let i = 0; i < 32; ++i) {
@@ -160,7 +160,7 @@ class Connection {
 		let maxSize = this.mtuSize - 60;
 		frame.stream.rewind();
 		if (frame.stream.buffer.length > maxSize) {
-			let compoundSize = Math.ceil(frame.stream.size / maxSize);
+			let compoundSize = Math.ceil(frame.stream.buffer.length / maxSize);
 			if (this.senderCompoundID > 0xffff) {
 				this.senderCompoundID = 0;
 			}
@@ -171,8 +171,7 @@ class Connection {
 				compoundEntry.compoundSize = compoundSize;
 				compoundEntry.compoundID = this.senderCompoundID;
 				compoundEntry.compoundEntryIndex = i;
-				compoundEntry.stream = new BinaryStream();
-				compoundEntry.stream.write(frame.stream.buffer.slice(frame.stream.offset, frame.stream.offset + maxSize));
+				compoundEntry.stream = new BinaryStream(frame.stream.read(maxSize));
 				if (ReliabilityTool.isReliable(frame.reliability) === true) {
 					compoundEntry.reliableFrameIndex = this.senderReliableFrameIndex;
 					++this.senderReliableFrameIndex;
