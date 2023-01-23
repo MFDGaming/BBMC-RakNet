@@ -21,6 +21,7 @@ class FrameSet extends Packet {
 	packetID = Identifiers.FRAME_SET;
 	sequenceNumber;
 	frames;
+    sendTime;
 
 	decodeHeader() {
 		if ((this.readUnsignedByte() & this.packetID) !== this.packetID) {

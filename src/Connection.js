@@ -118,6 +118,7 @@ class Connection {
 			let frameSet = new FrameSet();
 			frameSet.frames = this.queue;
 			frameSet.sequenceNumber = this.senderSequenceNumber;
+            frameSet.sendTime = Date.now();
 			this.recoveryQueue[this.senderSequenceNumber] = frameSet;
 			++this.senderSequenceNumber;
 			this.sendPacket(frameSet);
@@ -216,12 +217,20 @@ class Connection {
 	 * Ticks the connection
 	 */
 	tick() {
+        console.log(Object.entries(this.recoveryQueue).length);
 		if ((Date.now() - this.lastReceiveTimestamp) >= 10000) {
 			this.disconnect("timeout");
 		}
 		this.sendAckQueue();
 		this.sendNackQueue();
 		this.sendQueue();
+        for (const [sequenceNumber, frameSet] of Object.entries(this.recoveryQueue)) {
+            if (frameSet.sendTime < (Date.now() - 8000)) {
+                frameSet.sequenceNumber = this.senderSequenceNumber++;
+                frameSet.sendTime = Date.now();
+			    this.sendPacket(frameSet);
+            }
+        }
 	}
 
 	/**
