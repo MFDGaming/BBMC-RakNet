@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BlueBirdMC/RakNet.git"
+    "url": "git+https://github.com/MFDGaming/BBMC-RakNet.git"
   },
-  "author": "MFDGaming",
-  "license": "GPL-3.0",
+  "author": "mfdgaming",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/BlueBirdMC/RakNet/issues"
+    "url": "https://github.com/MFDGaming/BBMC-RakNet/issues"
   },
-  "homepage": "https://github.com/BlueBirdMC/RakNet#readme"
+  "homepage": "https://github.com/MFDGaming/BBMC-RakNet#readme"
 }
