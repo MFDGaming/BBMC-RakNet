@@ -131,7 +131,7 @@ class RakNetServer extends EventEmitter {
 			if (packet.isEncoded === false) {
 				packet.encode();
 			}
-			this.socket.send(packet.buffer, address.port, address.name);
+			this.socket.send(packet.buffer.slice(0, packet.length), address.port, address.name);
 		}
 	}
 

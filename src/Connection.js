@@ -217,7 +217,6 @@ class Connection {
 	 * Ticks the connection
 	 */
 	tick() {
-        console.log(Object.entries(this.recoveryQueue).length);
 		if ((Date.now() - this.lastReceiveTimestamp) >= 10000) {
 			this.disconnect("timeout");
 		}
@@ -335,7 +334,7 @@ class Connection {
 				newFrame.stream = new BinaryStream(newPacket.buffer);
 				this.appendFrame(newFrame, true);
 			} else {
-				frame.stream.rewind();
+				frame.stream.readOffset = 0;
 				this.server.emit("packet", frame.stream, this);
 			}
 		}

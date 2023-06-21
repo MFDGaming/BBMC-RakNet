@@ -33,9 +33,9 @@ class FrameSet extends Packet {
 		this.sequenceNumber = this.readUnsignedTriadLE();
 		this.frames = [];
 		while (this.feos() === false) {
-			let frame = new Frame(this.buffer, this.offset);
+			let frame = new Frame(this.buffer, this.readerOffset);
 			frame.decode();
-			this.offset = frame.offset;
+			this.readerOffset = frame.readerOffset;
 			this.frames.push(frame);
 		}
 	}
