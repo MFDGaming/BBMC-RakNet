@@ -74,7 +74,7 @@ class Acknowledge extends Packet {
 			}
 			++recordCount;
 			this.writeUnsignedShortBE(recordCount);
-			this.write(stream.buffer);
+			this.write(stream.buffer, stream.length);
 		}
 	}
 }

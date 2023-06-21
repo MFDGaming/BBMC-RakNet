@@ -43,8 +43,9 @@ class FrameSet extends Packet {
 	encodeBody() {
 		this.writeUnsignedTriadLE(this.sequenceNumber);
 		for (let i = 0; i < this.frames.length; ++i) {
-			this.frames[i].encode()
-			this.write(this.frames[i].buffer);
+			this.frames[i].encode();
+			let frame = this.frames[i]
+			this.write(frame.buffer, frame.length);
 		}
 	}
 }

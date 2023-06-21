@@ -160,8 +160,8 @@ class Connection {
 		}
 		let maxSize = this.mtuSize - 60;
 		frame.stream.rewind();
-		if (frame.stream.buffer.length > maxSize) {
-			let compoundSize = Math.ceil(frame.stream.buffer.length / maxSize);
+		if (frame.stream.length > maxSize) {
+			let compoundSize = Math.ceil(frame.stream.length / maxSize);
 			if (this.senderCompoundID > 0xffff) {
 				this.senderCompoundID = 0;
 			}
@@ -276,7 +276,8 @@ class Connection {
 			amalgamatedFrame.orderChannel = frame.orderChannel;
 			amalgamatedFrame.stream = new BinaryStream();
 			for (let i = 0; i < frame.compoundSize; ++i) {
-				amalgamatedFrame.stream.write(this.frameHolder[frame.compoundID][i].stream.buffer);
+				let frame = this.frameHolder[frame.compoundID][i];
+				amalgamatedFrame.stream.write(frame.stream.buffer, frame.stream.length);
 			}
 			delete this.frameHolder[frame.compoundID];
 			this.handleFrame(amalgamatedFrame);
