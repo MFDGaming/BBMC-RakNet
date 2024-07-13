@@ -198,9 +198,8 @@ class Connection {
 	
 	/**
 	 * Disconnects the connection
-	 * @param {string} reason
 	 */
-	disconnect(reason) {
+	disconnect() {
 		let frame = new Frame();
 		frame.reliability = ReliabilityTool.UNRELIABLE;
 		frame.isFragmented = false;
