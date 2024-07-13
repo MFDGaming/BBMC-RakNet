@@ -159,7 +159,7 @@ class Connection {
 			++this.senderOrderChannels[frame.orderChannel];
 		}
 		let maxSize = this.mtuSize - 60;
-		frame.stream.rewind();
+		frame.stream.readerOffset = 0;
 		if (frame.stream.length > maxSize) {
 			let compoundSize = Math.ceil(frame.stream.length / maxSize);
 			if (this.senderCompoundID > 0xffff) {
