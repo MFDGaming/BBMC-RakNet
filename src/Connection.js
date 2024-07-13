@@ -274,8 +274,8 @@ class Connection {
 			amalgamatedFrame.orderChannel = frame.orderChannel;
 			amalgamatedFrame.stream = new BinaryStream();
 			for (let i = 0; i < frame.compoundSize; ++i) {
-				let frame = this.frameHolder[frame.compoundID][i];
-				amalgamatedFrame.stream.write(frame.stream.buffer, frame.stream.length);
+				let selected_frame = this.frameHolder[frame.compoundID][i];
+				amalgamatedFrame.stream.write(selected_frame.stream.buffer, selected_frame.stream.length);
 			}
 			delete this.frameHolder[frame.compoundID];
 			this.handleFrame(amalgamatedFrame);
