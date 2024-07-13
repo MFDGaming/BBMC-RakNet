@@ -334,7 +334,7 @@ class Connection {
 				newFrame.stream = new BinaryStream(newPacket.buffer);
 				this.appendFrame(newFrame, true);
 			} else {
-				frame.stream.readOffset = 0;
+				frame.stream.readerOffset = 0;
 				this.server.emit("packet", frame.stream, this);
 			}
 		}
