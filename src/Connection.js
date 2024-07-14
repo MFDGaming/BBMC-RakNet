@@ -265,7 +265,7 @@ class Connection {
 			this.frameHolder[frame.compoundID] = {};
 		}
 		this.frameHolder[frame.compoundID][frame.compoundEntryIndex] = frame;
-		if (Object.values(this.frameHolder[frame.compoundID]).length == frame.compoundSize) {
+		if (Object.values(this.frameHolder[frame.compoundID]).length === frame.compoundSize) {
 			let amalgamatedFrame = new Frame();
 			amalgamatedFrame.isFragmented = false;
 			amalgamatedFrame.reliability = frame.reliability;
