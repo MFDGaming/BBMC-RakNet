@@ -16,7 +16,7 @@
 const BinaryStream = require("bbmc-binarystream");
 const InternetAddress = require("../misc/InternetAddress");
 const Identifiers = require("../Identifiers");
-const {ntop, pton} = require('js-inet');
+const { ntop, pton } = require('js-inet');
 
 class Packet extends BinaryStream {
 	packetID = -1;
