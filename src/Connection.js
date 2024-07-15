@@ -16,9 +16,6 @@
 const BinaryStream = require("bbmc-binarystream");
 const InternetAddress = require("./misc/InternetAddress");
 const Frame = require("./misc/Frame");
-const FrameSet = require("./packet/FrameSet");
-const Ack = require("./packet/Ack");
-const Nack = require("./packet/Nack");
 const ConnectionRequest = require("./packet/ConnectionRequest");
 const ConnectionRequestAccepted = require("./packet/ConnectionRequestAccepted");
 const NewIncomingConnection = require("./packet/NewIncomingConnection");
@@ -28,6 +25,8 @@ const Identifiers = require("./Identifiers");
 const Packet = require("./packet/Packet");
 const ReliabilityTool = require("./misc/ReliabilityTool");
 const DisconnectNotification = require("./packet/DisconnectNotification");
+const Datagram = require("./packet/Datagram");
+const DatagramHelper = require("./misc/DatagramHelper");
 
 class Connection {
 	address;
@@ -77,7 +76,7 @@ class Connection {
 		this.isConnected = false;
 		this.server = server;
 	}
-	
+
 	/**
 	 * Sends a packet over the network
 	 * @param {Packet} packet
@@ -85,47 +84,47 @@ class Connection {
 	sendPacket(packet) {
 		this.server.sendPacket(packet, this.address);
 	}
-	
+
 	/**
 	 * Sends the ack queue
 	 */
 	sendAckQueue() {
 		if (this.ackQueue.length > 0) {
-			let ack = new Ack();
+			let ack = DatagramHelper.createAcknowledge();
 			ack.sequenceNumbers = this.ackQueue;
 			this.sendPacket(ack);
 			this.ackQueue = [];
 		}
 	}
-	
+
 	/**
 	 * Sends the nack queue
 	 */
 	sendNackQueue() {
 		if (this.nackQueue.length > 0) {
-			let nack = new Nack();
+			let nack = DatagramHelper.createAcknowledge(true);
 			nack.sequenceNumbers = this.nackQueue;
 			this.sendPacket(nack);
 			this.nackQueue = [];
 		}
 	}
-	
+
 	/**
 	 * Sends all the frames in the queue
 	 */
 	sendQueue() {
 		if (this.queue.length > 0) {
-			let frameSet = new FrameSet();
-			frameSet.frames = this.queue;
-			frameSet.sequenceNumber = this.senderSequenceNumber;
-            frameSet.sendTime = Date.now();
-			this.recoveryQueue[this.senderSequenceNumber] = frameSet;
+			let datagram = DatagramHelper.createDatagram();
+			datagram.sequenceNumber = this.senderSequenceNumber;
+			datagram.frames = this.queue;
+			datagram.sendTime = Date.now();
+			this.recoveryQueue[this.senderSequenceNumber] = datagram;
 			++this.senderSequenceNumber;
-			this.sendPacket(frameSet);
+			this.sendPacket(datagram);
 			this.queue = [];
 		}
 	}
-	
+
 	/**
 	 * Appends a single frame to the queue
 	 * @param {Frame} frame
@@ -144,7 +143,7 @@ class Connection {
 			this.sendQueue();
 		}
 	}
-	
+
 	/**
 	 * Adds a frame  with arbitrary size to the queue
 	 * @param {Frame} frame
@@ -195,7 +194,7 @@ class Connection {
 			this.appendFrame(frame, false);
 		}
 	}
-	
+
 	/**
 	 * Disconnects the connection
 	 */
@@ -211,31 +210,31 @@ class Connection {
 		this.server.removeConnection(this.address);
 		this.server.emit("disconnect", this.address);
 	}
-	
+
 	/**
 	 * Ticks the connection
 	 */
 	tick() {
 		if ((Date.now() - this.lastReceiveTimestamp) >= 10000) {
-			this.disconnect("timeout");
+			this.disconnect();
 		}
 		this.sendAckQueue();
 		this.sendNackQueue();
 		this.sendQueue();
-        for (const [sequenceNumber, frameSet] of Object.entries(this.recoveryQueue)) {
-            if (frameSet.sendTime < (Date.now() - 8000)) {
-                frameSet.sequenceNumber = this.senderSequenceNumber++;
-                frameSet.sendTime = Date.now();
-			    this.sendPacket(frameSet);
-            }
-        }
+		for (const [sequenceNumber, datagram] of Object.entries(this.recoveryQueue)) {
+			if (datagram.sendTime < (Date.now() - 8000)) {
+				datagram.sequenceNumber = this.senderSequenceNumber++;
+				datagram.sendTime = Date.now();
+				this.sendPacket(datagram);
+			}
+		}
 	}
 
 	/**
-	 * Handle a frame set
-	 * @param {FrameSet} packet 
+	 * Handle a datagram
+	 * @param {Datagram} packet 
 	 */
-	handleFrameSet(packet) {
+	handleDatagram(packet) {
 		if (this.nackQueue.includes(packet.sequenceNumber) === true) {
 			this.nackQueue.splice(this.nackQueue.indexOf(packet.sequenceNumber), 1);
 		}
@@ -255,7 +254,7 @@ class Connection {
 			this.handleFrame(packet.frames[i]);
 		}
 	}
-	
+
 	/**
 	 * Handles a fragmented frame
 	 * @param {Frame} frame
@@ -281,7 +280,7 @@ class Connection {
 			this.handleFrame(amalgamatedFrame);
 		}
 	}
-	
+
 	/**
 	 * Handles a frame
 	 * @param {Frame} frame
@@ -338,7 +337,7 @@ class Connection {
 			}
 		}
 	}
-	
+
 	/**
 	 * Handle an ack
 	 * @param {Ack} packet
@@ -351,7 +350,7 @@ class Connection {
 			}
 		}
 	}
-	
+
 	/**
 	 * Handle an nack
 	 * @param {Nack} packet
@@ -359,11 +358,11 @@ class Connection {
 	handleNack(packet) {
 		for (let i = 0; i < packet.sequenceNumbers.length; ++i) {
 			if (packet.sequenceNumbers[i] in this.recoveryQueue) {
-				let frameSet = this.recoveryQueue[packet.sequenceNumbers[i]];
-				frameSet.sequenceNumber = this.senderSequenceNumber;
-				this.recoveryQueue[this.senderSequenceNumber] = frameSet;
+				let datagram = this.recoveryQueue[packet.sequenceNumbers[i]];
+				datagram.sequenceNumber = this.senderSequenceNumber;
+				this.recoveryQueue[this.senderSequenceNumber] = datagram;
 				++this.senderSequenceNumber;
-				this.sendPacket(frameSet);
+				this.sendPacket(datagram);
 				delete this.recoveryQueue[packet.sequenceNumbers[i]];
 				break;
 			}
