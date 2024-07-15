@@ -19,6 +19,7 @@ const Packet = require("./Packet");
 class Datagram extends Packet {
 	sequenceNumber;
 	frames;
+	sendTime;
 
 	decodeHeader() { }
 	encodeHeader() { }
