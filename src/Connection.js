@@ -159,7 +159,7 @@ class Connection {
 			++this.senderOrderChannels[frame.orderChannel];
 		}
 		let maxSize = this.mtuSize - 60;
-		frame.stream.rewind();
+		frame.stream.readerOffset = 0;
 		if (frame.stream.length > maxSize) {
 			let compoundSize = Math.ceil(frame.stream.length / maxSize);
 			if (this.senderCompoundID > 0xffff) {
@@ -198,9 +198,8 @@ class Connection {
 	
 	/**
 	 * Disconnects the connection
-	 * @param {string} reason
 	 */
-	disconnect(reason) {
+	disconnect() {
 		let frame = new Frame();
 		frame.reliability = ReliabilityTool.UNRELIABLE;
 		frame.isFragmented = false;
@@ -266,7 +265,7 @@ class Connection {
 			this.frameHolder[frame.compoundID] = {};
 		}
 		this.frameHolder[frame.compoundID][frame.compoundEntryIndex] = frame;
-		if (Object.values(this.frameHolder[frame.compoundID]).length == frame.compoundSize) {
+		if (Object.values(this.frameHolder[frame.compoundID]).length === frame.compoundSize) {
 			let amalgamatedFrame = new Frame();
 			amalgamatedFrame.isFragmented = false;
 			amalgamatedFrame.reliability = frame.reliability;
@@ -275,8 +274,8 @@ class Connection {
 			amalgamatedFrame.orderChannel = frame.orderChannel;
 			amalgamatedFrame.stream = new BinaryStream();
 			for (let i = 0; i < frame.compoundSize; ++i) {
-				let frame = this.frameHolder[frame.compoundID][i];
-				amalgamatedFrame.stream.write(frame.stream.buffer, frame.stream.length);
+				let selectedFrame = this.frameHolder[frame.compoundID][i];
+				amalgamatedFrame.stream.write(selectedFrame.stream.buffer, selectedFrame.stream.length);
 			}
 			delete this.frameHolder[frame.compoundID];
 			this.handleFrame(amalgamatedFrame);
@@ -334,7 +333,7 @@ class Connection {
 				newFrame.stream = new BinaryStream(newPacket.buffer);
 				this.appendFrame(newFrame, true);
 			} else {
-				frame.stream.readOffset = 0;
+				frame.stream.readerOffset = 0;
 				this.server.emit("packet", frame.stream, this);
 			}
 		}
