@@ -24,7 +24,6 @@ class Identifiers {
 	static OPEN_CONNECTION_REPLY_TWO = 0x08;
 	static ACK = 0xC0;
 	static NACK = 0xA0;
-	static FRAME_SET = 0x80;
 	static CONNECTION_REQUEST = 0x09;
 	static CONNECTION_REQUEST_ACCEPTED = 0x10;
 	static NEW_INCOMING_CONNECTION = 0x13;
@@ -37,6 +36,19 @@ class Identifiers {
 		0xfd, 0xfd, 0xfd, 0xfd,
 		0x12, 0x34, 0x56, 0x78
 	]);
+	static DATAGRAM_FLAGS = {
+		VALID: {
+			VALUE: 0x80,
+			IS_PACKET_PAIR: 0x10,
+			IS_CONTINUOUS_SEND: 0x08,
+			REQUIRES_B_AND_AS: 0x04
+		},
+		ACK: {
+			VALUE: 0x40,
+			REQUIRES_B_AND_AS: 0x10
+		},
+		NACK: 0x20,
+	};
 }
 
 module.exports = Identifiers;
