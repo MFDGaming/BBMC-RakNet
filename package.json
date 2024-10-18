@@ -4,7 +4,7 @@
   "description": "BlueBirdMC's RakNet library",
   "main": "src/RakNet.js",
   "dependencies": {
-    "bbmc-binarystream": "^1.0.0",
+    "bbmc-binarystream": "^1.0.1",
     "js-inet": "^0.2.0"
   },
   "scripts": {
