@@ -59,7 +59,7 @@ class Frame extends BinaryStream {
 	 */
 	encode() {
 		this.writeUnsignedByte((this.reliability << 5) | (this.isFragmented === true ? 0x10 : 0x00));
-		this.writeUnsignedShortBE(this.stream.buffer.length << 3);
+		this.writeUnsignedShortBE(this.stream.length << 3);
 		if (ReliabilityTool.isReliable(this.reliability) === true) {
 			this.writeUnsignedTriadLE(this.reliableFrameIndex);
 		}
@@ -75,7 +75,7 @@ class Frame extends BinaryStream {
 			this.writeUnsignedShortBE(this.compoundID);
 			this.writeUnsignedIntBE(this.compoundEntryIndex);
 		}
-		this.write(this.stream.buffer);
+		this.write(this.stream.buffer, this.stream.length);
 	}
 
 	/**
@@ -83,7 +83,7 @@ class Frame extends BinaryStream {
 	 * @returns number
 	 */
 	getSize() {
-		let size = 3 + this.stream.buffer.length;
+		let size = 3 + this.stream.length;
 		if (ReliabilityTool.isReliable(this.reliability) === true) {
 			size += 3;
 		}

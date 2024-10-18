@@ -29,10 +29,7 @@ class ReliabilityTool {
 	 * @returns boolean
 	 */
 	static isReliable(reliability) {
-		if (reliability === ReliabilityTool.RELIABLE || reliability === ReliabilityTool.RELIABLE_ORDERED || reliability === ReliabilityTool.RELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_WITH_ACK_RECEIPT || reliability === ReliabilityTool.RELIABLE_ORDERED_WITH_ACK_RECEIPT) {
-			return true;
-		}
-		return false;
+		return reliability === ReliabilityTool.RELIABLE || reliability === ReliabilityTool.RELIABLE_ORDERED || reliability === ReliabilityTool.RELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_WITH_ACK_RECEIPT || reliability === ReliabilityTool.RELIABLE_ORDERED_WITH_ACK_RECEIPT;
 	}
 
 	/**
@@ -41,10 +38,7 @@ class ReliabilityTool {
 	 * @returns boolean
 	 */
 	static isSequenced(reliability) {
-		if (reliability === ReliabilityTool.UNRELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_SEQUENCED) {
-			return true;
-		}
-		return false;
+		return reliability === ReliabilityTool.UNRELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_SEQUENCED;
 	}
 
 	/**
@@ -53,10 +47,7 @@ class ReliabilityTool {
 	 * @returns boolean
 	 */
 	static isOrdered(reliability) {
-		if (reliability === ReliabilityTool.UNRELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_ORDERED || reliability === ReliabilityTool.RELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_ORDERED_WITH_ACK_RECEIPT) {
-			return true;
-		}
-		return false;
+		return reliability === ReliabilityTool.UNRELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_ORDERED || reliability === ReliabilityTool.RELIABLE_SEQUENCED || reliability === ReliabilityTool.RELIABLE_ORDERED_WITH_ACK_RECEIPT;
 	}
 }
 

@@ -24,12 +24,12 @@ const OpenConnectionRequestTwo = require("./packet/OpenConnectionRequestTwo");
 const OpenConnectionReplyOne = require("./packet/OpenConnectionReplyOne");
 const OpenConnectionReplyTwo = require("./packet/OpenConnectionReplyTwo");
 const IncompatibleProtocolVersion = require("./packet/IncompatibleProtocolVersion");
-const FrameSet = require("./packet/FrameSet");
-const Ack = require("./packet/Ack");
-const Nack = require("./packet/Nack");
+const DatagramHeader = require("./misc/DatagramHeader");
 const Packet = require("./packet/Packet");
 const dgram = require("dgram");
-const EventEmitter  = require('events')
+const EventEmitter = require('events');
+const Acknowledge = require("./packet/Acknowledge");
+const Datagram = require("./packet/Datagram");
 
 class RakNetServer extends EventEmitter {
 	message;
@@ -120,7 +120,7 @@ class RakNetServer extends EventEmitter {
 	getTime() {
 		return BigInt(Date.now()) - this.epoch;
 	}
-	
+
 	/**
 	 * Sends a packet over the network
 	 * @param {Packet} packet
@@ -131,7 +131,7 @@ class RakNetServer extends EventEmitter {
 			if (packet.isEncoded === false) {
 				packet.encode();
 			}
-			this.socket.send(packet.buffer, address.port, address.name);
+			this.socket.send(packet.buffer.slice(0, packet.length), address.port, address.name);
 		}
 	}
 
@@ -176,19 +176,36 @@ class RakNetServer extends EventEmitter {
 			this.sendPacket(newPacket, address);
 			this.addConnection(address, packet.mtuSize, this);
 		} else if (this.hasConnection(address) === true) {
-			this.getConnection(address).lastReceiveTimestamp = Date.now();
-			if (packetID == Identifiers.ACK) {
-				let packet = new Ack(stream.buffer);
-				packet.decode();
-				this.getConnection(address).handleAck(packet);
-			} else if (packetID == Identifiers.NACK) {
-				let packet = new Nack(stream.buffer);
-				packet.decode();
-				this.getConnection(address).handleNack(packet);
-			} else if (packetID >= 0x80 && packetID <= 0x8f) {
-				let packet = new FrameSet(stream.buffer);
-				packet.decode();
-				this.getConnection(address).handleFrameSet(packet);
+			let connection = this.getConnection(address);
+
+			connection.lastReceiveTimestamp = Date.now();
+
+			let datagramHeader = new DatagramHeader(stream.buffer);
+			datagramHeader.decode();
+
+			if (!datagramHeader.isValid) {
+				return;
+			}
+
+			let packet;
+
+			if (datagramHeader.isAck || datagramHeader.isNack) {
+				packet = new Acknowledge(stream.buffer, datagramHeader.readerOffset);
+			} else {
+				packet = new Datagram(stream.buffer, datagramHeader.readerOffset);
+			}
+
+			packet.decode();
+
+			if (packet instanceof Acknowledge) {
+				if (datagramHeader.isAck) {
+					connection.handleAck(packet);
+				} else if (datagramHeader.isNack) {
+					connection.handleNack(packet);
+				}
+
+			} else if (packet instanceof Datagram) {
+				connection.handleDatagram(packet);
 			}
 		}
 	}

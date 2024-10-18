@@ -13,29 +13,24 @@
  * \ @author BlueBirdMC Team /            *
 \******************************************/
 
-const Packet = require("./Packet");
-const Identifiers = require("../Identifiers");
 const Frame = require("../misc/Frame");
+const Packet = require("./Packet");
 
-class FrameSet extends Packet {
-	packetID = Identifiers.FRAME_SET;
+class Datagram extends Packet {
 	sequenceNumber;
 	frames;
-    sendTime;
+	sendTime;
 
-	decodeHeader() {
-		if ((this.readUnsignedByte() & this.packetID) !== this.packetID) {
-			throw new Error("Invalid packet id");
-		}
-	}
+	decodeHeader() { }
+	encodeHeader() { }
 
 	decodeBody() {
 		this.sequenceNumber = this.readUnsignedTriadLE();
 		this.frames = [];
 		while (this.feos() === false) {
-			let frame = new Frame(this.buffer, this.offset);
+			let frame = new Frame(this.buffer, this.readerOffset);
 			frame.decode();
-			this.offset = frame.offset;
+			this.readerOffset = frame.readerOffset;
 			this.frames.push(frame);
 		}
 	}
@@ -43,10 +38,11 @@ class FrameSet extends Packet {
 	encodeBody() {
 		this.writeUnsignedTriadLE(this.sequenceNumber);
 		for (let i = 0; i < this.frames.length; ++i) {
-			this.frames[i].encode()
-			this.write(this.frames[i].buffer);
+			let frame = this.frames[i];
+			frame.encode();
+			this.write(frame.buffer, frame.length);
 		}
 	}
 }
 
-module.exports = FrameSet;
+module.exports = Datagram;

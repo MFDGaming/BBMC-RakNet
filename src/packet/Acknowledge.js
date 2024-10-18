@@ -14,11 +14,13 @@
 \******************************************/
 
 const Packet = require("./Packet");
-const Identifiers = require("../Identifiers");
 const BinaryStream = require("bbmc-binarystream");
 
 class Acknowledge extends Packet {
 	sequenceNumbers;
+
+	decodeHeader() { }
+	encodeHeader() { }
 
 	decodeBody() {
 		this.sequenceNumbers = [];
@@ -74,7 +76,7 @@ class Acknowledge extends Packet {
 			}
 			++recordCount;
 			this.writeUnsignedShortBE(recordCount);
-			this.write(stream.buffer);
+			this.write(stream.buffer, stream.length);
 		}
 	}
 }
