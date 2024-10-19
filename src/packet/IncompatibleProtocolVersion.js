@@ -22,13 +22,13 @@ class IncompatibleProtocolVersion extends Packet {
 	serverGUID;
 
 	decodeBody() {
-		this.protocolVersion = this.readUnsignedByte();
+		this.protocolVersion = this.readUnsignedShortBE();
 		this.readMagic();
 		this.serverGUID = this.readUnsignedLongBE();
 	}
 
 	encodeBody() {
-		this.writeUnsignedByte(this.protocolVersion);
+		this.writeUnsignedShortBE(this.protocolVersion);
 		this.writeMagic();
 		this.writeUnsignedLongBE(this.serverGUID);
 	}
