@@ -40,13 +40,14 @@ class RakNetServer extends EventEmitter {
 	connections;
 	isRunning;
 	tickTask;
+	debugMode;
 
 	/**
 	 * Initializes the server
 	 * @param {InternetAddress} address 
 	 * @param {number} protocolVersion
 	 */
-	constructor(address, protocolVersion) {
+	constructor(address, protocolVersion, debugMode = false) {
 		super();
 		this.message = "";
 		this.protocolVersion = protocolVersion;
@@ -54,6 +55,7 @@ class RakNetServer extends EventEmitter {
 		this.epoch = BigInt(Date.now());
 		this.isRunning = true;
 		this.connections = {};
+		this.debugMode = debugMode;
 		this.socket = dgram.createSocket(address.version === 4 ? "udp4" : "udp6");
 		this.socket.on('message', (msg, rinfo) => {
 			if (!this.isRunning) {
@@ -70,6 +72,16 @@ class RakNetServer extends EventEmitter {
 				}
 			}
 		}, 10);
+	}
+
+	/**
+	 * Logs a debug message if debug mode is enabled
+	 * @param {string} message
+	 */
+	log(message) {
+		if (this.debugMode) {
+			console.log(`[DEBUG] ${message}`);
+		}
 	}
 
 	/**
@@ -141,9 +153,12 @@ class RakNetServer extends EventEmitter {
 	 */
 	handlePacket(stream, address) {
 		let packetID = stream.readUnsignedByte();
+		this.log(`Received packet ID: ${packetID}`);
+
 		if (packetID == Identifiers.UNCONNECTED_PING) {
 			let packet = new UnconnectedPing(stream.buffer);
 			packet.decode();
+			this.log(`Processing UnconnectedPing: ${JSON.stringify(packet)}`);
 			let newPacket = new UnconnectedPong();
 			newPacket.clientTimestamp = packet.clientTimestamp;
 			newPacket.serverGUID = this.serverGUID;
@@ -152,6 +167,7 @@ class RakNetServer extends EventEmitter {
 		} else if (packetID == Identifiers.OPEN_CONNECTION_REQUEST_ONE) {
 			let packet = new OpenConnectionRequestOne(stream.buffer);
 			packet.decode();
+			this.log(`Processing OpenConnectionRequestOne: ${JSON.stringify(packet)}`); 
 			if (packet.protocolVersion === this.protocolVersion) {
 				let newPacket = new OpenConnectionReplyOne();
 				newPacket.serverGUID = this.serverGUID;
@@ -167,6 +183,7 @@ class RakNetServer extends EventEmitter {
 		} else if (packetID == Identifiers.OPEN_CONNECTION_REQUEST_TWO) {
 			let packet = new OpenConnectionRequestTwo(stream.buffer);
 			packet.decode();
+			this.log(`Processing OpenConnectionRequestTwo: ${JSON.stringify(packet)}`);
 			let newPacket = new OpenConnectionReplyTwo();
 			newPacket.serverGUID = this.serverGUID;
 			newPacket.clientAddress = address;
@@ -176,13 +193,13 @@ class RakNetServer extends EventEmitter {
 			this.addConnection(address, packet.mtuSize, this);
 		} else if (this.hasConnection(address) === true) {
 			let connection = this.getConnection(address);
-
 			connection.lastReceiveTimestamp = Date.now();
 
 			let datagramHeader = new DatagramHeader(stream.buffer);
 			datagramHeader.decode();
 
 			if (!datagramHeader.isValid) {
+				this.log('Invalid datagram header received');
 				return;
 			}
 
@@ -195,14 +212,13 @@ class RakNetServer extends EventEmitter {
 			}
 
 			packet.decode();
-
+			this.log(`Processing packet: ${JSON.stringify(packet)}`);
 			if (packet instanceof Acknowledge) {
 				if (datagramHeader.isAck) {
 					connection.handleAck(packet);
 				} else if (datagramHeader.isNack) {
 					connection.handleNack(packet);
 				}
-
 			} else if (packet instanceof Datagram) {
 				connection.handleDatagram(packet);
 			}
