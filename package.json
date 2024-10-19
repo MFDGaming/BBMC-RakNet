@@ -1,6 +1,6 @@
 {
   "name": "bbmc-raknet",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "BlueBirdMC's RakNet library",
   "main": "src/RakNet.js",
   "dependencies": {

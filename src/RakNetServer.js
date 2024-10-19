@@ -212,7 +212,10 @@ class RakNetServer extends EventEmitter {
 			}
 
 			packet.decode();
-			this.log(`Processing packet: ${JSON.stringify(packet)}`);
+			const packetString = JSON.stringify(packet, (key, value) =>
+				typeof value === 'bigint' ? value.toString() : value
+			);
+			this.log(`Processing packet: ${packetString}`);
 			if (packet instanceof Acknowledge) {
 				if (datagramHeader.isAck) {
 					connection.handleAck(packet);
