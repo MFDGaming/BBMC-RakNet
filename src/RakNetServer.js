@@ -39,6 +39,7 @@ class RakNetServer extends EventEmitter {
 	epoch;
 	connections;
 	isRunning;
+	tickTask;
 
 	/**
 	 * Initializes the server
@@ -55,20 +56,18 @@ class RakNetServer extends EventEmitter {
 		this.connections = {};
 		this.socket = dgram.createSocket(address.version === 4 ? "udp4" : "udp6");
 		this.socket.on('message', (msg, rinfo) => {
-			if (this.isRunning === false) {
-				this.socket.close();
+			if (!this.isRunning) {
+				return;
 			}
 			this.handlePacket(new BinaryStream(msg), new InternetAddress(rinfo.address, rinfo.port, rinfo.family == "IPv4" ? 4 : 6));
 		});
 		this.socket.bind(address.port, address.name);
-		let tickTask = setInterval(() => {
-			if (this.isRunning === true) {
+		this.tickTask = setInterval(() => {
+			if (this.isRunning) {
 				let connections = Object.values(this.connections);
 				for (let i = 0; i < connections.length; ++i) {
 					connections[i].tick();
 				}
-			} else {
-				clearInterval(tickTask);
 			}
 		}, 10);
 	}
@@ -209,6 +208,28 @@ class RakNetServer extends EventEmitter {
 			}
 		}
 	}
+
+	shutdown() {
+		if (!this.isRunning) return;
+
+		this.isRunning = false;
+
+		this.socket.close(() => {
+			console.log('Server socket closed.');
+		});
+
+		if (this.tickTask) {
+			clearInterval(this.tickTask);
+		}
+
+		let connections = Object.values(this.connections);
+		for (let connection of connections) {
+			connection.close();
+		}
+
+		this.connections = {};
+	}
+
 }
 
 module.exports = RakNetServer;

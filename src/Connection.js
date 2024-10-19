@@ -368,6 +368,10 @@ class Connection {
 			}
 		}
 	}
+
+	close() {
+		this.server.removeConnection(this.address);
+	}
 }
 
 module.exports = Connection;
