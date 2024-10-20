@@ -39,6 +39,7 @@ class RakNetServer extends EventEmitter {
 	epoch;
 	connections;
 	isRunning;
+	tickTask;
 
 	/**
 	 * Initializes the server
@@ -55,20 +56,18 @@ class RakNetServer extends EventEmitter {
 		this.connections = {};
 		this.socket = dgram.createSocket(address.version === 4 ? "udp4" : "udp6");
 		this.socket.on('message', (msg, rinfo) => {
-			if (this.isRunning === false) {
-				this.socket.close();
+			if (!this.isRunning) {
+				return;
 			}
 			this.handlePacket(new BinaryStream(msg), new InternetAddress(rinfo.address, rinfo.port, rinfo.family == "IPv4" ? 4 : 6));
 		});
 		this.socket.bind(address.port, address.name);
-		let tickTask = setInterval(() => {
-			if (this.isRunning === true) {
+		this.tickTask = setInterval(() => {
+			if (this.isRunning) {
 				let connections = Object.values(this.connections);
 				for (let i = 0; i < connections.length; ++i) {
 					connections[i].tick();
 				}
-			} else {
-				clearInterval(tickTask);
 			}
 		}, 10);
 	}
@@ -177,37 +176,45 @@ class RakNetServer extends EventEmitter {
 			this.addConnection(address, packet.mtuSize, this);
 		} else if (this.hasConnection(address) === true) {
 			let connection = this.getConnection(address);
-
 			connection.lastReceiveTimestamp = Date.now();
-
 			let datagramHeader = new DatagramHeader(stream.buffer);
 			datagramHeader.decode();
-
 			if (!datagramHeader.isValid) {
 				return;
 			}
-
 			let packet;
-
 			if (datagramHeader.isAck || datagramHeader.isNack) {
 				packet = new Acknowledge(stream.buffer, datagramHeader.readerOffset);
 			} else {
 				packet = new Datagram(stream.buffer, datagramHeader.readerOffset);
 			}
-
 			packet.decode();
-
 			if (packet instanceof Acknowledge) {
 				if (datagramHeader.isAck) {
 					connection.handleAck(packet);
 				} else if (datagramHeader.isNack) {
 					connection.handleNack(packet);
 				}
-
 			} else if (packet instanceof Datagram) {
 				connection.handleDatagram(packet);
 			}
 		}
+	}
+
+	shutdown() {
+		if (!this.isRunning) return;
+		this.isRunning = false;
+		this.socket.close(() => {
+			console.log('Server socket closed.');
+		});
+		if (this.tickTask) {
+			clearInterval(this.tickTask);
+		}
+		let connections = Object.values(this.connections);
+		for (let connection of connections) {
+			connection.close();
+		}
+		this.connections = {};
 	}
 }
 

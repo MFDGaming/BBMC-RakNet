@@ -16,69 +16,84 @@
 const Packet = require("./Packet");
 const BinaryStream = require("bbmc-binarystream");
 
+const SINGLE_PACKET_FLAG = 0x01;
+const RANGE_PACKET_FLAG = 0x00;
+
 class Acknowledge extends Packet {
-	sequenceNumbers;
+    sequenceNumbers;
 
-	decodeHeader() { }
-	encodeHeader() { }
+    decodeHeader() {}
 
-	decodeBody() {
-		this.sequenceNumbers = [];
-		let recordCount = this.readUnsignedShortBE();
-		for (let i = 0; i < recordCount; ++i) {
-			let isSingle = this.readBool();
-			if (isSingle === true) {
-				this.sequenceNumbers.push(this.readUnsignedTriadLE());
-			} else {
-				let currentIndex = this.readUnsignedTriadLE();
-				let endIndex = this.readUnsignedTriadLE();
-				while (currentIndex <= endIndex) {
-					this.sequenceNumbers.push(currentIndex);
-					++currentIndex;
-				}
-			}
-		}
-	}
+    encodeHeader() {}
 
-	encodeBody() {
-		this.sequenceNumbers.sort();
-		let stream = new BinaryStream();
-		let recordCount = 0;
-		if (this.sequenceNumbers.length > 0) {
-			let startIndex = this.sequenceNumbers[0];
-			let endIndex = this.sequenceNumbers[0];
-			for (let i = 1; i < this.sequenceNumbers.length; ++i) {
-				let currentIndex = this.sequenceNumbers[i];
-				let diff = currentIndex - endIndex;
-				if (diff === 1) {
-					endIndex = currentIndex;
-				} else if (diff > 1) {
-					if (startIndex === endIndex) {
-						stream.writeUnsignedByte(0x01);
-						stream.writeUnsignedTriadLE(startIndex);
-						startIndex = endIndex = currentIndex;
-					} else {
-						stream.writeUnsignedByte(0x00);
-						stream.writeUnsignedTriadLE(startIndex);
-						stream.writeUnsignedTriadLE(endIndex);
-						startIndex = endIndex = currentIndex;
-					}
-					++recordCount;
-				}
-			}
-			if (startIndex === endIndex) {
-				stream.writeUnsignedByte(0x01);
-				stream.writeUnsignedTriadLE(startIndex);
-			} else {
-				stream.writeUnsignedByte(0x00);
-				stream.writeUnsignedTriadLE(startIndex);
-				stream.writeUnsignedTriadLE(endIndex);
-			}
-			++recordCount;
-			this.writeUnsignedShortBE(recordCount);
-			this.write(stream.buffer, stream.length);
-		}
-	}
+    /**
+     * Decodes the body of the acknowledgment packet.
+     * Reads sequence numbers, either as single entries or ranges.
+     */
+    decodeBody() {
+        this.sequenceNumbers = [];
+        let recordCount = this.readUnsignedShortBE();
+
+        if (recordCount < 0) {
+            throw new Error("Invalid record count");
+        }
+
+        for (let i = 0; i < recordCount; ++i) {
+            let isSingle = this.readBool();
+            if (isSingle === true) {
+                this.sequenceNumbers.push(this.readUnsignedTriadLE());
+            } else {
+                let currentIndex = this.readUnsignedTriadLE();
+                let endIndex = this.readUnsignedTriadLE();
+                while (currentIndex <= endIndex) {
+                    this.sequenceNumbers.push(currentIndex);
+                    ++currentIndex;
+                }
+            }
+        }
+    }
+
+    /**
+     * Encodes the body of the acknowledgment packet.
+     * Compresses sequence numbers into single entries or ranges.
+     */
+    encodeBody() {
+        this.sequenceNumbers.sort();
+        let stream = new BinaryStream();
+        let recordCount = 0;
+
+        if (this.sequenceNumbers.length > 0) {
+            let startIndex = this.sequenceNumbers[0];
+            let endIndex = this.sequenceNumbers[0];
+
+            for (let i = 1; i < this.sequenceNumbers.length; ++i) {
+                let currentIndex = this.sequenceNumbers[i];
+                let diff = currentIndex - endIndex;
+
+                if (diff === 1) {
+                    endIndex = currentIndex;
+                } else {
+                    stream.writeUnsignedByte(startIndex === endIndex ? SINGLE_PACKET_FLAG : RANGE_PACKET_FLAG);
+                    stream.writeUnsignedTriadLE(startIndex);
+                    if (startIndex !== endIndex) {
+                        stream.writeUnsignedTriadLE(endIndex);
+                    }
+                    startIndex = endIndex = currentIndex;
+                    ++recordCount;
+                }
+            }
+
+            stream.writeUnsignedByte(startIndex === endIndex ? SINGLE_PACKET_FLAG : RANGE_PACKET_FLAG);
+            stream.writeUnsignedTriadLE(startIndex);
+            if (startIndex !== endIndex) {
+                stream.writeUnsignedTriadLE(endIndex);
+            }
+            ++recordCount;
+
+            this.writeUnsignedShortBE(recordCount);
+            this.write(stream.buffer, stream.length);
+        }
+    }
 }
 
 module.exports = Acknowledge;
